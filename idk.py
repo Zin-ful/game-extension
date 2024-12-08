@@ -2,10 +2,14 @@ import time
 import random
 import json
 import sys
+#import keyboard
+
 effort = 0
 result = ""
 current_day = ""
+days = ["monday","tuesday","wednsday","thursday","friday","saturday","sunday"]
 unlocked_local = {}
+guide = 'Guide: '
 class Player():
     player_list =[] 
     def __init__(self, name):
@@ -22,6 +26,7 @@ class Player():
         self.intro = 0
         self.day = 0
         self.locations = []
+        self.bag = []
         self.x = 0
         self.y = 0 #can add these to save file to maintain position on larger adventures
         self.z = 0
@@ -30,12 +35,21 @@ class Player():
             self.statpnt += round(level / 2)
             self.xp = self.xp - self.xp
             self.levelreq += self.levelreq
-    def bag(self):
-        inventory = {
+    
+    def add_item(self, item):
+        self.bag.append(item)
         
-        }
-    
-    
+    def use_item(self, item_name):
+        global result
+        for item in self.bag:
+            print(item.name)
+            if item.name.lower() == item.name.lower:
+                item.use(self)
+                self.bag.remove(item)
+                break
+            else:
+                print("item not found")
+        
     def save_to_file(self):
         global result
         data = {
@@ -62,29 +76,32 @@ class Player():
     @classmethod
     def load_save(cls): #cls refers to class itself, this way we can pass multiple players thru simce cls is essentally equal to the current instance of self
         global unlocked_local
-        with open("players.json", "r") as file:
-            load_attr = json.load(file)
-            load_player = cls(name=load_attr["name"])
-            load_player.hp = load_attr["hp"]
-            load_player.strgth = load_attr["strgth"]
-            load_player.spd = load_attr["spd"]
-            load_player.deff = load_attr["deff"]
-            load_player.xp = load_attr["xp"]
-            load_player.level = load_attr["level"]
-            load_player.levelreq = load_attr["levelreq"]
-            load_player.statpnt = load_attr["statpnt"]
-            load_player.intro = load_attr["intro"]
-            load_player.day = load_attr["day"]
-            load_player.money = load_attr["money"]
+        try:
+            with open("players.json", "r") as file:
+                load_attr = json.load(file)
+                load_player = cls(name=load_attr["name"])
+                load_player.hp = load_attr["hp"]
+                load_player.strgth = load_attr["strgth"]
+                load_player.spd = load_attr["spd"]
+                load_player.deff = load_attr["deff"]
+                load_player.xp = load_attr["xp"]
+                load_player.level = load_attr["level"]
+                load_player.levelreq = load_attr["levelreq"]
+                load_player.statpnt = load_attr["statpnt"]
+                load_player.intro = load_attr["intro"]
+                load_player.day = load_attr["day"]
+                load_player.money = load_attr["money"]
+                #load_inventory =
+                Player.player_list.append(cls(load_attr["name"]))
+                return load_player 
+        except FileNotFoundError as nferror:
+            print("no players created")  
+            game()   
             
-            #load_inventory =
-            Player.player_list.append(cls(load_attr["name"]))
-            return load_player 
     @property
     def pos(self):
         return self.x, self.y, self.z
-            
-            
+
 class Hostile():
     hostile = True
     def __init__(self):
@@ -95,29 +112,58 @@ class Hostile():
         
     def attack_player():
         return
-        
-class MakeWorld():
-    def __init__(self, max_size):
-        return #populate with structures, obsticals
-        
-class Dungeon(): #spawn in world
-    return
-        
+
 class Item():
-    def __init__(self, name, price):
+    def __init__(self, name, price, points, effect):
         self.name = name
         self.price = price
+        self.points = points
+        self.effect = effect
     
+    
+
+    def use(self,player):
+        global result
+        result = "step 3"
+        if self.effect:
+            self.effect(player)
+        result = 'step 4'
+
 class Weapon():
     def __init__(self, name, dmg, price):
         self.name = name
         self.dmg = dmg
         self.price = price
-        
-        
+
 def game():
     main()
     intro()
+
+"""world gen"""
+
+class MakeWorld():
+    def __init__(self, max_size):
+        return #populate with structures, obsticals
+
+class Dungeon(): #spawn in world
+    def __init__(self):
+        return
+
+"""item effects"""
+def hp_effect(player, points):
+    global result
+    if player.hp <= 100:
+        while item.points > 1 and player.hp < 100:
+            if player.hp > 99 or item.points < 1:
+                result = 'fail bool'
+                break
+            else:
+                player.hp += 1
+                item.points -= 1
+                result = 'step 3'
+
+"""places"""
+
 def main():
     global player
     while True:
@@ -133,7 +179,7 @@ def main():
             break
         else:
             print("yes or no.")
-            
+
 def intro():
     
     palace_actions = {
@@ -142,18 +188,18 @@ def intro():
         "mirror": check_self,
         "level":lambda:print(player.level),
         "points": point_allocate,
-        "save":lambda:player.save_to_file,
+        "save":player.save_to_file,
         "players":lambda:print(Player.player_list),
-        "calendar":lambda:print(current_day),
-        "shop": store   
-        "sleep": rest,  
-        "exit":sys.exit,   
+        "calendar":weekdays,
+        "shop": store, 
+        "sleep": rest,
+        "exit":sys.exit,
         "help":lambda:print(f"your actions are:\nexplore, status, sleep, mirror, level, points, save, players, calendar, exit")
     }
     if player.intro == 0:
         player.locations = []
-        print("welcome to the woods, here is home.\nthis is where you can see your stats,\nlevel up, look yourself over, and explore")
-        print("you can summon yourself back here anytime using 'palace'\nbut that doesnt work in a fight")
+        print(f"{guide}welcome to the woods, here is home.\nthis is where you can see your stats,\nlevel up, look yourself over, and explore")
+        print(f"{guide}you can summon yourself back here anytime using 'palace'\nbut that doesnt work in a fight")
         player.intro = 1
     else:
         print("welcome back! ask me for help if you cant figure things out")
@@ -164,6 +210,7 @@ def intro():
         xcute = palace_actions.get(prompt)
         if xcute:
             xcute()
+
 def travel():
     global unlocked_local
     locations_update()
@@ -174,6 +221,7 @@ def travel():
         xcute = unlocked_local.get(prompt)
         if xcute:
             xcute()
+
 def store():
     mon_items = { #from intro 0-1, new items will be added from 2-3
         "health potion": 0,
@@ -181,17 +229,21 @@ def store():
         "defense potion": 0, #temporary, assign to item class
         "oak staff": 0,
         "leather":0  #make craft func.
+        
         }
     if player.day == 0 or player.day == 2:
         return #days decide the price/quality of items
-        
-    
+
 def freeland():
     freeland_actions = {
         "west":left,
         "east": right,
         "north": up,
         "south": down,
+        "w":up,
+        "a": left, #improve movement with keyboard.is_pressed()
+        "s": down,
+        "d": right,
         "pos":lambda:print(pos),
         "position":lambda:print(pos),
         "location":lambda:print(pos),
@@ -205,10 +257,14 @@ def freeland():
         if xcute:
             xcute()
         print(f"{screen_clear}{player.pos}")
+
 def darkwood():
     return
     
     player.intro = 3   
+
+"""palace actions"""
+
 def status():
     print(f"coins: {player.money}\nhealth: {player.hp}\nstr: {player.strgth}\nspeed: {player.spd}\ndef: {player.deff}\nexp: {player.xp}\nlevel: {player.level}\nstat points: {player.statpnt}")
     
@@ -219,24 +275,24 @@ def check_self():
         print("maybe i need to rest.")
     elif player.hp < 50 and player.hp > 20:
         print("i cant feel my skin.")
-    elif player.hp < 5:
-        print("if i cant feel my skin ill just tear it off.")
-    
-    
+    elif player.hp < 3:
+        print("....")
+
 def point_allocate():
     return #for stats
-    
-def weekdays():
-    global current_day
-days = ["monday","tuesday","wednsday","thursday","friday","saturday","sunday"] #start @0
-current_day = days[player.day] #saves day progress so each boot isnt a complete restart
+
 def rest():
     global result
-    player.day += 1
-    while player.health <= 100:
-        player.health += 1
+    if player.day <= 6:
+        player.day += 1
+        if player.day > 6:
+            player.day = 0
+    while player.hp <= 100:
+        player.hp += 1
     result = "you are well rested"    
-        
+
+"""movement"""
+
 def left():
     global result, effort
     if player.x >= -100:
@@ -247,8 +303,7 @@ def left():
         effort = effort + 1
         if effort >= 5:
             player.intro = 2
-        
-        
+
 def right():
     global result, effort
     if player.x <= 100:
@@ -281,6 +336,16 @@ def down():
         effort = effort + 1
         if effort >= 5:
             player.intro = 2
+
+"""update"""
+
+def weekdays():
+    global current_day
+    if player.day > 6:
+        player.day = 0
+    current_day = days[player.day]
+    print(current_day) #saves day progress so each boot isnt a complete restart
+
 def locations_update(): #we dont use var = set(player.locations) cause the original will grow every update
    if player.intro == 0: #its more efficient to check for duplicates and pass
        player.locations = []
@@ -293,5 +358,13 @@ def locations_update(): #we dont use var = set(player.locations) cause the origi
        unlocked_local.update({"darkwood":darkwood})
    player.locations = list(set(player.locations))   
 
-screen_clear = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-game()    
+screen_clear = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+#game()    
+hp_pot = Item("H-pot", 25, 20, effect=hp_effect)
+player = Player.load_save()
+player.hp -= 50
+player.add_item(hp_pot)
+print(player.name, player.hp)
+player.use_item('H-pot')
+print(result)
+print(player.name, player.hp, player.bag, result)
