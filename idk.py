@@ -40,10 +40,8 @@ class Player():
         self.bag.append(item)
         
     def use_item(self, item_name):
-        global result
         for item in self.bag:
-            print(item.name)
-            if item.name.lower() == item.name.lower:
+            if item.name.lower() == item.name.lower():
                 item.use(self)
                 self.bag.remove(item)
                 break
@@ -123,11 +121,9 @@ class Item():
     
 
     def use(self,player):
-        global result
-        result = "step 3"
+        active = False
         if self.effect:
-            self.effect(player)
-        result = 'step 4'
+            self.effect(player, self.points, *active)
 
 class Weapon():
     def __init__(self, name, dmg, price):
@@ -137,6 +133,8 @@ class Weapon():
 
 def game():
     main()
+    player.add_item(hp_pot)
+    player.hp -= 50
     intro()
 
 """world gen"""
@@ -151,16 +149,26 @@ class Dungeon(): #spawn in world
 
 """item effects"""
 def hp_effect(player, points):
-    global result
     if player.hp <= 100:
-        while item.points > 1 and player.hp < 100:
-            if player.hp > 99 or item.points < 1:
-                result = 'fail bool'
+        while points >= 0 and player.hp <= 100:
+            if player.hp >= 100 or points <= 0:
+                print("health full")
                 break
             else:
                 player.hp += 1
-                item.points -= 1
-                result = 'step 3'
+                points -= 1
+def spd_effect(player, points, active):
+    if active == False:
+        player.spd += 3
+        active = True
+        x = player.x + 5
+        y = player.y + 5
+        x2 = player.x - 5
+        y2 = player.y - 5
+    if player.x == x or player.y == y or player.x == x2 or player.y == y2:
+    
+        player.spd -= 3
+        active = False
 
 """places"""
 
@@ -193,6 +201,7 @@ def intro():
         "calendar":weekdays,
         "shop": store, 
         "sleep": rest,
+        "view bag": view_bag,
         "exit":sys.exit,
         "help":lambda:print(f"your actions are:\nexplore, status, sleep, mirror, level, points, save, players, calendar, exit")
     }
@@ -223,18 +232,14 @@ def travel():
             xcute()
 
 def store():
-    mon_items = { #from intro 0-1, new items will be added from 2-3
-        "health potion": 0,
-        "speed potion": 0,
-        "defense potion": 0, #temporary, assign to item class
-        "oak staff": 0,
-        "leather":0  #make craft func.
+    mon_items = { #from intro 0-1, new items will be added from 2-3.
         
         }
     if player.day == 0 or player.day == 2:
         return #days decide the price/quality of items
 
 def freeland():
+    arg = ''
     freeland_actions = {
         "west":left,
         "east": right,
@@ -244,38 +249,41 @@ def freeland():
         "a": left, #improve movement with keyboard.is_pressed()
         "s": down,
         "d": right,
-        "pos":lambda:print(pos),
-        "position":lambda:print(pos),
-        "location":lambda:print(pos),
-        "palace":intro   
+        "pos":lambda:print(player.pos),
+        "position":lambda:print(player.pos),
+        "location":lambda:print(player.pos),
+        "palace":intro,
+        "view-bag":view_bag,
+        f"use {arg}":lambda:player.use_item(prompt)
     }
     print("explore in any direction!\nsyntax: west")
     while True:
         prompt = input(">>>")
         prompt = prompt.lower()
+        if ' ' in prompt:
+            prompt, arg = prompt.split(' ')
         xcute = freeland_actions.get(prompt)
         if xcute:
             xcute()
-        print(f"{screen_clear}{player.pos}")
 
 def darkwood():
     return
     
     player.intro = 3   
 
-"""palace actions"""
+"""actions"""
 
 def status():
     print(f"coins: {player.money}\nhealth: {player.hp}\nstr: {player.strgth}\nspeed: {player.spd}\ndef: {player.deff}\nexp: {player.xp}\nlevel: {player.level}\nstat points: {player.statpnt}")
     
 def check_self():
-    if player.hp <= 100 and player.hp > 75:
+    if player.hp <= 100 and player.hp >= 75:
         print("not too shabby.")
-    elif player.hp < 75 and player.hp > 50:
+    elif player.hp <= 75 and player.hp >= 50:
         print("maybe i need to rest.")
-    elif player.hp < 50 and player.hp > 20:
+    elif player.hp <= 50 and player.hp >= 20:
         print("i cant feel my skin.")
-    elif player.hp < 3:
+    elif player.hp <= 3:
         print("....")
 
 def point_allocate():
@@ -291,6 +299,15 @@ def rest():
         player.hp += 1
     result = "you are well rested"    
 
+def view_bag():
+    index = 0
+    for item in player.bag:
+        print(item.name)
+        if index >= len(player.bag):
+            break
+        else:
+            index += 1
+        
 """movement"""
 
 def left():
@@ -359,12 +376,8 @@ def locations_update(): #we dont use var = set(player.locations) cause the origi
    player.locations = list(set(player.locations))   
 
 screen_clear = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-#game()    
+   
 hp_pot = Item("H-pot", 25, 20, effect=hp_effect)
-player = Player.load_save()
-player.hp -= 50
-player.add_item(hp_pot)
-print(player.name, player.hp)
-player.use_item('H-pot')
-print(result)
-print(player.name, player.hp, player.bag, result)
+game() 
+#player.use_item('H-pot')
+
