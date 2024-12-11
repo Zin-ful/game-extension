@@ -1,0 +1,26 @@
+finished world gen
+added enemy generation
+added position conflic avoidence (checks if any hostile objects are on tree spawns and removes those coords from hostile before finishing generation)
+added battle func
+improved hostile class
+added chat func in sanctuary
+*did not make file to store guide chat lines
+^^do this to avoid loading hundreds of lines into memory
+*conflict between different enemies types exist, dont care
+*add error handling if player obj does not exist
+
+bug fixes:
+player now collides with obj
+fixed "self" reference outside of class for day progression inside freeland func
+fixed while loop syntax error (indent) in battle
+fixed 2 extra hostile object syntax error
+added for loop in hostile_check to loop through hostiles list and compare hostile pos vs player pos
+^^^^^^THIS WAS WRONG
+added for loop to movement (wasd) to loop through the list and assign each item as an arguent into hostile check instead
+seems to work fine for now, more bugs in battle(arg,arg) probably
+fixed bad syntax in MakeHostile class
+fixed it 4 times
+bug in hostile gen, hostile.json is empty meaning the list has no data
+^^gen failed
+faliure in hostile_gen.json as well
+

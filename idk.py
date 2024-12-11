@@ -14,7 +14,7 @@ days = ["monday","tuesday","wednsday","thursday","friday","saturday","sunday"]
 unlocked_local = {}
 guide = 'Guide: '
 Throttle = True
-limit = 0.00001
+limit = 0.0001
 
 class Player():
     player_list =[] 
@@ -106,16 +106,63 @@ class Player():
     def pos(self):
         return self.x, self.y, self.z
 
-class Hostile():
+class MakeHostile():
     hostile = True
-    def __init__(self):
-        self.name = Hostile
-        self.hp = 25
-        self.atk = random.randint(1,3)
+    def __init__(self, min_sizex, max_sizex, min_sizey, max_sizey, event_count, name, lvl, hp, atk, spd, deff):
+        self.min_sizex = min_sizex
+        self.max_sizex = min_sizex
+        self.min_sizey = min_sizex
+        self.max_sizey = min_sizex
+        self.event_count = event_count
+        self.name = name
+        self.lvl = lvl
+        self.hp = hp + random.randint(0, lvl)
+        self.atk = atk + random.randint(0, lvl)
+        self.spd = spd + random.randint(0, lvl)
+        self.deff = deff + random.randint(0, lvl)
+        self.h_coord_listx =[]
+        self.h_coord_listy =[]
+        self.hostile_spawn =[]
 
 
     def attack_player():
         return
+    
+    
+    def generate_hostilemap(self):
+        global counter
+        self.h_coord_listx =[]
+        self.h_coord_listy =[]
+        while counter < self.event_count: #create general max to increase variety
+            self.h_coord_listx.append(random.randint(self.min_sizex, self.max_sizex))
+            self.h_coord_listy.append(random.randint(self.min_sizey,self.max_sizey))
+            if Throttle:
+                time.sleep(limit)
+            counter += 1
+            self.h_coord_listx = list(set(self.h_coord_listx))
+            self.h_coord_listy = list(set(self.h_coord_listy))
+            percent_complete = (counter / self.event_count) * 100  # Calculate dynamic percent
+            print(f"{percent_complete:.2f}% complete")  # Print with two decimal places for precision
+        data = [{"x": self.h_coord_listx, #for _ in range is essentally saying to repeate this loop this many times ignoring the for variable
+            "y": self.h_coord_listy}]
+        with open("hostile_gen.json", "w") as file:
+            json.dump(data, file)
+            
+    def generate_hostile(self):
+        hostile_rangex = len(self.h_coord_listx)
+        hostile_rangey = len(self.h_coord_listy)
+        hostile_spwn_crdsx = random.sample(self.h_coord_listx, hostile_rangex)
+        hostile_spwn_crdsy = random.sample(self.h_coord_listy, hostile_rangey)
+        self.hostile_spwn = list(zip(hostile_spwn_crdsx, hostile_spwn_crdsy))
+        with open("tree_spwn.json", "r") as file:
+            tree_chk_spwn = json.load(file)
+            for spwn in self.hostile_spwn:
+                if spwn in tree_chk_spwn:
+                    self.hostile_spwn.remove(spwn)
+        data = [{"hostile_spwn": self.hostile_spwn}]
+        with open("hostile.json", "w") as file:
+            json.dump(data, file)
+    
 
 class Item():
     def __init__(self, name, price, points, effect):
@@ -172,11 +219,14 @@ class MakeWorld():
         if (player.x, player.y) in self.tree_spwn:
             result = result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
             player.x += 1
+        for hostile in hostiles:
+            hostile_check(player, hostile)
                     
   
 
     def right(self, player):
         global result, effort
+        MakeHostile.hostile_check()
         if player.x <= self.max_sizex:
             player.x += 1
         elif player.x >= self.max_sizex: 
@@ -188,6 +238,8 @@ class MakeWorld():
         if (player.x, player.y) in self.tree_spwn:
             result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
             player.x -= 1
+            for hostile in hostiles:
+                hostile_check(player, hostile)
             
     def up(self, player):
         global result, effort
@@ -202,7 +254,9 @@ class MakeWorld():
         if (player.x, player.y) in self.tree_spwn:
             result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
             player.y -= 1
-
+            for hostile in hostiles:
+                hostile_check(player, hostile)
+        
     def down(self, player):
         global result, effort
         if player.y >= self.min_sizey:
@@ -216,18 +270,16 @@ class MakeWorld():
         if (player.x, player.y) in self.tree_spwn:
             result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
             player.y += 1
-    
-    def generate_world(self):
+        for hostile in hostiles:
+            hostile_check(player, hostile)
+        
+    def generate_treemap(self):
         global counter
         self.t_coord_listx =[]
         self.t_coord_listy =[]
-        #max_distr = (self.max_sizex * self.max_sizex) // 50
-        #min_distr = -abs(max_distr)
         while counter < self.event_count: #create general max to increase variety
             self.t_coord_listx.append(random.randint(self.min_sizex, self.max_sizex))
             self.t_coord_listy.append(random.randint(self.min_sizey,self.max_sizey))
-            #t_coord_listx.append(random.randint(min_distr,max_distr))
-            #t_coord_listy.append(random.randint(min_distr,max_distr))
             if Throttle:
                 time.sleep(limit)
             counter += 1
@@ -237,7 +289,7 @@ class MakeWorld():
             print(f"{percent_complete:.2f}% complete")  # Print with two decimal places for precision
         data = [{"x": self.t_coord_listx, #for _ in range is essentally saying to repeate this loop this many times ignoring the for variable
             "y": self.t_coord_listy}]
-        with open("world_gen.json", "w") as file:
+        with open("tree_gen.json", "w") as file:
             json.dump(data, file)
             
     def generate_tree(self):
@@ -249,10 +301,7 @@ class MakeWorld():
         data = [{"tree_spwn": self.tree_spwn}]
         with open("tree_spwn.json", "w") as file:
             json.dump(data, file)
-            
-                
-                
-            
+    
 class Dungeon(): #spawn in world
     def __init__(self):
         return
@@ -301,6 +350,7 @@ def main():
             exist = input(">>>")
             exist = exist.lower()
             config(exist)
+
 def config(option):
     global Throttle
     if "1 false" in option:
@@ -309,8 +359,6 @@ def config(option):
         print("throttle controls how fast the game loads\nsetting to false will set the speed to your cpu")
     else:
         Throttle = True
-        
-    
             
 def menu(option):
     global player, play_name
@@ -380,9 +428,14 @@ def store():
 
 def freeland():
     print("generating world")
-    fland.generate_world()
+    fland.generate_treemap()
     fland.generate_tree()
-    self.day += 1
+    print("generating enemies")
+    fland_hostile_rouge.generate_hostilemap()
+    fland_hostile_rouge.generate_hostile()
+    fland_hostile_scavanger.generate_hostilemap()
+    fland_hostile_scavanger.generate_hostile()
+    player.day += 1
     arg = ''
     freeland_actions = {
         "west":lambda:fland.left(player),
@@ -413,10 +466,49 @@ def freeland():
             if result:
                 print(result)
                 result = ''
+
 def darkwood():
     return
 
     player.intro = 3   
+
+def battle(player, hostiles): 
+    cache_lvl = hostiles.lvl
+    cache_hp = hostiles.hp
+    cache_deff = hostiles.deff
+    recent_atkhos = False
+    recent_atkplr = False
+    while True:
+        cache_atk = hostile.atk + random.randint(0,mon_lvl)
+        cache_spd = hostile.spd + random.randint(0,mon_lvl)
+        print(f"\n\n{player.name}:\n{player.hp}\n{player.strgth}\n{player.spd}\n{player.deff}\n")
+        print("\nattack? defend? or run?n")
+        plr_input = input("\n>>>")
+        if "a" in plr_input.lower() or "1" in plr_input:
+            if player.spd > cache_monspd:
+                if recent_atkplr == False:
+                    recent_atkplr = True
+                    cache_monhp -= plr_atk
+                    print(f"{player.name} attacked for {player.strgth} damage.\n{hostile.name} has {cache_hp} left.")
+                else:
+                    recent_atkplr = False
+                    plr_hp -= cache_monatk
+                    print(f"{player.name} got attacked for {cache_atk} damage.\n{player.name} has {player.hp} left.")
+            elif player.spd <= cache_monspd:
+                if recent_atkmon == False:
+                    recent_atkmon = True
+                    plr_hp -= cache_monatk
+                    print(f"{player.name} got attacked for {cache_atk} damage.\n{player.name} has {player.hp} left.")
+                else:
+                    recent_atkmon = False
+                    cache_monhp -= plr_atk
+                    print(f"{player.name} attacked for {player.strgth} damage.\n{hostile.name} has {cache_hp} left.")
+        if player.hp <= 0:
+            print(f"{plr_nm} suffered a horrible death at the hands of\nball crusher™ and got his balls crushed")
+            break 
+        elif cache_monhp <= 0:
+            print(f"{plr_nm} vanquished the angel dooming this world")
+            break
 
 """npc phrase"""
 guide_list_1 = ["\n\nwelcome back!\nask me for help if you cant figure things out\n",
@@ -715,9 +807,13 @@ def view_bag():
         else:
             index += 1
 
-"""movement"""
+"""utility"""
 
-"""update"""
+def hostile_check(player, hostiles):
+    if (player.x, player.y) in hostile.hostile_spwn:
+        battle()
+        if player.hp == 0:
+            print("you lossed")
 
 def weekdays():
     global current_day
@@ -742,6 +838,9 @@ def locations_update(): #we dont use var = set(player.locations) cause the origi
 screen_clear = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 fland = MakeWorld("freeland", -100, 100, -100, 100, 0, 0, 0, 1000)#debug
 hp_pot = Item("H-pot", 25, 20, effect=hp_effect)
+fland_hostile_rouge = MakeHostile(-100, 100, -100, 100, 1000, "rouge", 1, 100, 10, 5, 0)
+fland_hostile_scavanger = MakeHostile(-100, 100, -100, 100, 1000, "scavanger", 1, 100, 10, 5, 0)
+hostiles = [fland_hostile_rouge, fland_hostile_scavanger]
 main()
 game() 
 
