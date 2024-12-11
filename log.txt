@@ -1,3 +1,4 @@
+NOTES FOR FIRST VER: 0.1:
 finished world gen
 added enemy generation
 added position conflic avoidence (checks if any hostile objects are on tree spawns and removes those coords from hostile before finishing generation)
@@ -24,3 +25,4 @@ bug in hostile gen, hostile.json is empty meaning the list has no data
 ^^gen failed
 faliure in hostile_gen.json as well
 
+NOTES FOR 0.1.1:
