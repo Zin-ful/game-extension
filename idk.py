@@ -3,6 +3,9 @@ import random
 import json
 import sys
 #import keyboard
+counter = 0
+#debug = input("trees >>>")
+#debug = int(debug)
 effort = 0
 index = round(0.0,1)
 result = ""
@@ -153,20 +156,23 @@ class MakeWorld():
         self.effort = effort
         self.event_count = event_count #generated obsticals
         self.event_coord = []
+        self.t_coord_listx = []
+        self.t_coord_listy = []
+        self.tree_spwn = []
     def left(self, player):
         global effort, result
         if player.x >= self.min_sizex:
             player.x -= 1   
         elif player.x <= self.min_sizex: #replace static max size with makeworld max size
             result = "\nlooks dangerous, im not going further\n"
-            player.x = self.min_sizex
+            player.x += 1
             effort = effort + 1
             if effort >= 5:
                 player.intro = 2
-        for tree in tree_spwn_crdsx:
-            if player.x == int(tree) and player.y == int(tree):
-                player.x += 1
-                result = f"\ndamn tree in my way at y: {tree}"        
+        if (player.x, player.y) in self.tree_spwn:
+            result = result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
+            player.x += 1
+                    
   
 
     def right(self, player):
@@ -175,29 +181,27 @@ class MakeWorld():
             player.x += 1
         elif player.x >= self.max_sizex: 
             result = "\nlooks dangerous, im not going further\n"
-            player.x = self.max_sizex
+            player.x -= 1
             effort = effort + 1
             if effort >= 5:
                 player.intro = 2
-        for tree in tree_spwn_crdsx:
-            if player.x == int(tree) and player.y == int(tree):
-                player.x -= 1
-                result = f"\ndamn tree in my way at y: {tree}"        
-
+        if (player.x, player.y) in self.tree_spwn:
+            result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
+            player.x -= 1
+            
     def up(self, player):
         global result, effort
         if player.y <= self.max_sizey:
             player.y += 1
         elif player.y >= self.max_sizey:
             result = "\nlooks dangerous and its cold, im not going further\n"
-            player.y = self.max_sizey
+            player.y -= 1
             effort = effort + 1
             if effort >= 5:
                 player.intro = 2
-        for tree in tree_spwn_crdsy:
-            if player.y == int(tree) and player.x == int(tree):
-                player.y -= 1
-                result = f"\ndamn tree in my way at y: {tree}"
+        if (player.x, player.y) in self.tree_spwn:
+            result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
+            player.y -= 1
 
     def down(self, player):
         global result, effort
@@ -205,46 +209,44 @@ class MakeWorld():
             player.y -= 1
         elif player.y <= self.min_sizey:
             result = "\nlooks dangerous, im not going further\n"
-            player.y = self.min_sizey
+            player.y += 1
             effort = effort + 1
             if effort >= 5:
                 player.intro = 2
-        for tree in tree_spwn_crdsy:
-            if player.y == int(tree) and player.x == int(tree):
-                player.y += 1
-                result = f"\ndamn tree in my way at y: {tree}"
+        if (player.x, player.y) in self.tree_spwn:
+            result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
+            player.y += 1
     
     def generate_world(self):
-        global index, t_coord_listx, t_coord_listy
-        t_coord_listx =[]
-        t_coord_listy =[]
+        global counter
+        self.t_coord_listx =[]
+        self.t_coord_listy =[]
         #max_distr = (self.max_sizex * self.max_sizex) // 50
         #min_distr = -abs(max_distr)
-        while index < self.event_count: #create general max to increase variety
-            t_coord_listx.append(random.randint(self.min_sizex, self.max_sizex))
-            t_coord_listy.append(random.randint(self.min_sizey,self.max_sizey))
+        while counter < self.event_count: #create general max to increase variety
+            self.t_coord_listx.append(random.randint(self.min_sizex, self.max_sizex))
+            self.t_coord_listy.append(random.randint(self.min_sizey,self.max_sizey))
             #t_coord_listx.append(random.randint(min_distr,max_distr))
             #t_coord_listy.append(random.randint(min_distr,max_distr))
             if Throttle:
                 time.sleep(limit)
-            index += 1    
-            percent_complete = (index / self.event_count) * 100  # Calculate dynamic percent
+            counter += 1
+            self.t_coord_listx = list(set(self.t_coord_listx))
+            self.t_coord_listy = list(set(self.t_coord_listy))
+            percent_complete = (counter / self.event_count) * 100  # Calculate dynamic percent
             print(f"{percent_complete:.2f}% complete")  # Print with two decimal places for precision
-        data = [{"x": t_coord_listx, #for _ in range is essentally saying to repeate this loop this many times ignoring the for variable
-            "y": t_coord_listy} for _ in range(self.event_count)]
+        data = [{"x": self.t_coord_listx, #for _ in range is essentally saying to repeate this loop this many times ignoring the for variable
+            "y": self.t_coord_listy}]
         with open("world_gen.json", "w") as file:
             json.dump(data, file)
             
     def generate_tree(self):
-        global tree_spwn_crdsx, tree_spwn_crdsy
-        tree_rangex = len(t_coord_listx)
-        tree_rangey = len(t_coord_listy)
-        select_treex = tree_rangex // 3
-        select_treey = tree_rangey // 3
-        tree_spwn_crdsx = random.sample(t_coord_listx, select_treex)
-        tree_spwn_crdsy = random.sample(t_coord_listy, select_treey)
-        data = [{"x": tree_spwn_crdsx, 
-            "y": tree_spwn_crdsy} for _ in range(self.event_count)]
+        tree_rangex = len(self.t_coord_listx)
+        tree_rangey = len(self.t_coord_listy)
+        tree_spwn_crdsx = random.sample(self.t_coord_listx, tree_rangex)
+        tree_spwn_crdsy = random.sample(self.t_coord_listy, tree_rangey)
+        self.tree_spwn = list(zip(tree_spwn_crdsx, tree_spwn_crdsy))
+        data = [{"tree_spwn": self.tree_spwn}]
         with open("tree_spwn.json", "w") as file:
             json.dump(data, file)
             
@@ -328,6 +330,7 @@ def intro():
 
     palace_actions = {
         "explore": travel,
+        "chat": chat_guide,
         "status": status,
         "mirror": check_self,
         "level":lambda:print(player.level),
@@ -347,7 +350,7 @@ def intro():
         print(f"\n{guide}you can summon yourself back anytime using 'palace'\nbut that doesnt work in a fight\n")
         player.intro = 1
     else:
-        phrase = random.randint(0,18)
+        phrase = random.randint(0,249)
         print(guide_list_1[phrase])
 
     while True:
@@ -379,6 +382,7 @@ def freeland():
     print("generating world")
     fland.generate_world()
     fland.generate_tree()
+    self.day += 1
     arg = ''
     freeland_actions = {
         "west":lambda:fland.left(player),
@@ -429,18 +433,255 @@ guide_list_1 = ["\n\nwelcome back!\nask me for help if you cant figure things ou
                 "\n\ndid you know you could encounter other adventurers out in the wild\nif they happen to die, that loot is finders keepers!\n",
                 "\n\nharming other humans can bring bad karma, its a balance of luck and gear to maintain\n",
                 "\n\nyou can always see what the shop has in stock for gear!\nwe dont gather material other than the animals\nbut the shop has a crafting area for whatever you may find\n",
-                "\n\nthere are many gods, above all though is soj, the god of favor.\nif you meet him you might just find good luck!\n",
+                "\n\nthere are many gods, above all though is lucy, the god of favor.\nif you meet him you might just find good luck!\n",
                 "\n\nabandoned stuctures litter the freelands, they are that common in other places\n",
                 "\n\noutside of the freelands are 9 other unique areas!\nive only been to the third area, wasteland\n",
                 "\n\ni dont like to spoil the fun, so as you progress\nill tell you more about the new things you discover!\n",
                 "\n\nif you ever need to heal, you should sleep\nluna(god of dreams) restores all physical injuries during the night.\n\nnot mental ones though\n",
                 "\n\nits been told that each time a god dies\na human is blessed with a portion of their power\n"
+                "\n\nheard any good stories from adventurers lately?\ni love a good tale of bravery\n",
+                "\n\nthe stars look brighter at the edge of the fields.\n'science' says its cause were in a different\nspot in the galaxy, whatever that means\n",
+                "\n\nsometimes, if your quiet, you can listen.\nto adventurers leak information\nkeep your ears open\n",
+                "\n\nif you're looking for crafting material, try slaying monsters\n",
+                "\n\ndid you know there's a special tree in the forest\nthat glows blue under the full moon?\n",
+                "\n\nadventurers seem restless today.\nits said the day can effect your luck\n",
+                "\n\napparently theres a shop around here.\nmaybe you should try it\n",
+                "\n\nthe gear you find here might not look fancy,\nbut it’s built to last\n",
+                "\n\nlegends speak of a god of gods,\nbut no one who’s seen it has ever returned\n",
+                "\n\nonce you start exploring, you'll realize\nhow small the village really is\n",
+                "\n\nif you want to learn about crafting,\nask the shop keep\n",
+                "\n\npeople talk about hidden passageways in the wasteland.\nmaybe there's a way to unlock them\n",
+                "\n\ni dont talk about it often, but,\ntheres a god above gods.\nthose who meet it, dont die, they dont exist\n",
+                "\n\ndon’t underestimate the power of kindness.\nit might save your life someday\n",
+                "\n\nthere’s a place you can fall into.\nbe careful not to get stuck\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                "\n\nhave you ever wondered why the clouds move faster\nover the freelands?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                "\n\nif you pay the shop keep\nhe might just leak locations of structures",
+                "\n\nlook closely at the ground when you travel.\nyou never know what you might stumble upon\n",
+                "\n\nif your head is telling you not to explore something\nitd be smart to listen, the ones before you didnt.\n\ni dont remember much about them anymorr\n",
+                "\n\nevery now and then, I hear footsteps outside the store.\nbut no one ever goes in\n",
+                "\n\nthe enviorment will tell you things.\nsomething might be close\n",
+                "\n\nfreeland is unique for how open it is\n",
+                "\n\nthe days of the week are important.\nsol, the god of the sun decides these days\nhes powerful enough to expand freeland depending on the day!",
+                "\n\nlegends say that the moon has a dark side.\nbut ive never seen the moon turn around, so\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                "\n\nyour wondering about the gods?\nill tell you another time\n",
+                "\n\nthere are many gods. the more well known, the more powerful\nwell except for one\n",
+                "\n\nthe most common gods and the ones i know are\nthe god of sleep, the sun, the earth, fortune, creation, and erasure\n",
+                "\n\nluck is important, it could decide life or death\n",
+                "\n\nthe ocean seems endless but apparently\ntheres land on the other side of it\n",
+                "\n\nhowd it go out there?\n",
+                "\n\nfind anything decent?\nthe shop keep dropped a coin i may or may not have",
+                "\n\nwho ever made me, gave me a lot to say.\n",
+                "\n\nthe current day can decide a lot\nit’s worth paying attention\n",
+                "\n\nsome humans can use magic\nits because someone in their family slayed a god",
+                "\n\nif you ever kill a god, you should check the mirror\n",
+                "\n\nthe shop has many items\nit grows as you explore",
+                "\n\nsome enemies drop items from other areas\ncause thats how walking works",
+                "\n\nif you find a broken weapon you might be able to salvage it\n",
+                "\n\ndont have much to say, do you?\n",
+                "\n\nthe wastelands look far, but sol might help you walk less\n",
+                "\n\nit’s rare, but i do things besides waiting to greet you\n",
+                "\n\nsome idiot came in here babling about an iphone\n\nwhat?\n",
+                "\n\nwatch the patterns in the sand.\nthey might show you the way\n",
+                "\n\nsometimes i want to be the generic guide\nwho says things like\n\n'the deeper you go into the caves,\nthe less light reaches you'\n\n but i have pride in my work\n",
+                "\n\nevery tool has a purpose, but watching the shop keep be nice\nis like cutting a cake with a hammer\n",
+                "\n\npeople say the gods walk among us in disguise.\nbut how would we know?\n",
+                "\n\n'some doors are locked for a reason.\nbut that doesn’t mean they shouldn’t be opened'\n\n what a stupid thing to say.\n",
+                "\n\nyou brought back food, right?\n",
+                "\n\ndarkwoods isnt full of a ton of trees despite the name\nits actually sparse, large trees with very wide leaf-spans\n",
+                "\n\nyou sure sleep a lot\n",
+                "\n\nwhat even are levels?\n",
+                "\n\nyour about as much fun to talk to as a wall\n",
+                "\n\nyou see the guy that just left?\nnoone from nowheresville lookin ass\n",
+                "\n\nyou think you could find me a wife out there?\n",
+                "\n\nthey expand this place every now and then\n",
+                "\n\nunlike warping back to the woods (here)\nyou can physically walk from place to place. or not\n",
+                "\n\ngods effect all creatures equally.\nfor every human to slay a god and obtain its powers\ntheres a monter whos done the same",
+                "\n\nkilling a mortal with a gods power does not bless you with that ability\nits just passed to the next in their family\na real cause for power struggles now that i think about it\n",
+                "\n\nsome maniac yellimg about another adver- advortes- ad? i dont know\n",
+                "\n\nthe worst guy i know is some.idiot named logan\noh, and his idiot brother jake\n",
+                "\n\nyou sure are fun to have a conversation with.\ndont worry, im an empath. i can feel your responses\n",
+                "\n\nthe strongest mortals have powers from multiple gods\nfamilies dont start out with them but once\na family member slays a god, the whole family line is blessed\nbut only one can use that power. if multiple are slain\nthen you get a family member with multiple powers\n"
+                "\n\nhey, welcome back.\nhow was it out there?\n",
+                "\n\nfind anything cool on your trip?\n",
+                "\n\nthe shop’s got some new stuff. might be worth a look\n",
+                "\n\nlooks like a good day to explore, huh?\n",
+                "\n\nif you need supplies, monsters are a good way to find stuff\n",
+                "\n\nwhat the hell is a youtube... beef?\nweird ass people, weird ass food.\n",
+                "\n\nthe freelands are full of old ruins.\nmight be something useful there\n",
+                "\n\npeople still talk about the gods, but who knows if they’re real\n",
+                "\n\nthe shop has a crafting station if you need to make anything\n",
+                "\n\nnew adventurers always seem to come through here.\nit’s part of the freelands, I guess\n",
+                "\n\nyou can get better gear at the shop.\nit won’t look flashy, but it works\n",
+                "\n\nthere’s a barrier at the edge of the field.\nmakes you wonder what’s out there\nwell i know, obviously\n",
+                "\n\nrumor has it, mortal gods could be among us.\nwho knows, though\n",
+                "\n\nthis place feels big, but after a while, it feels small, doesn’t it?\n",
+                "\n\namong us?\n",
+                "\n\nthe shop grows its inventory as adventurers explore.\nit works out well\n",
+                "\n\nsleeping restores your injuries. luna takes care of that while you rest\n",
+                "\n\nthere are stories about adventurers meeting gods in the woods.\nit’s probably better to avoid them\n",
+                "\n\nluck is always a factor out here.\nsometimes you win, mostly you don’t\n",
+                "\n\nthe wastelands are threatening and strange. i’ll tell you about it sometime\n",
+                "\n\nif you keep wandering, you’ll usually find something interesting\n",
+                "\n\nthe shopkeeper charged me for using his water cup.. why?\n",
+                "\n\nif you run into lucy, the god of favor,\nwell…maybe you’ll get lucky\n",
+                "\n\nkarma can pile up.\npersonally, i try to stay neutral\n",
+                "\n\nfreeland’s open spaces are rare. it’s nothing like other areas\n",
+                "\n\nour measuring system? um.. its metric. why?\n",
+                "\n\nthe shop has a crafting area. you can put stuff together\n",
+                "\n\nthe gods have weird rules and strange powers.\nno one’s really figured them all out\n",
+                "\n\nsometimes you’ll hear adventurers whispering about valuable locations.\nit’s worth listening\n",
+                "\n\ndid you know we have a sixth sense?\nwe can sense a small area around ourselves\n",
+                "\n\nkilling a god could change a lot. it might get a bounty on your head\n",
+                "\n\nthe freelands are quiet most of the time. not much happens, but that’s okay\n",
+                "\n\nhey, did you see that tree? it looked odd… probably nothing\n",
+                "\n\npeople always mention the moons, the sun, and luck.\npeople being me\n",
+                "\n\ni finally ripped the tag off this shirt, thank the gods\nwait, tag? i sowed it?\n",
+                "\n\ndon’t stress too much about the edge of the fields. take your time\n",
+                "\n\nthe shop has a lot of items, and they grow the stock the more you explore\n",
+                "\n\npeople here talk about gods and their stories all the time.\nmaybe they’re real, maybe not\nive never met one\n",
+                "\n\nevery now and then you’ll find ruins out here.\n",
+                "\n\nthe days feel like they mean something. sol, the god of the sun, has that effect\n",
+                "\n\nno, im not really sure why items dont break naturally.\nmaybe thats our power haha\n",
+                "\n\ni might repeat myself, but you’ll learn them eventually\n",
+                "\n\nsome people are sure the gods have had their hands in human lives for centuries.\nyou decide what you believe\n",
+                "\n\na traveler talked about a way to summon food without leaving your seat. i didn’t ask further\n",
+                "\n\nsomeone was mumbling about 'videos' they watched while resting by the fire. couldn’t follow what they meant\n",
+                "\n\na traveler swore by some mechanical transportation that rolled and didn't walk.\ni think i need a drink\n",
+                "\n\nthey had this excited look talking about their parchment they called 'the news.' felt off, really\n",
+                "\n\nsomeone talked about carrying their 'shining coin book' to barter. What?\n"
+                "\n\nThe shopkeep charged me for sitting in a chair this morning.\n",
+                "\n\nI spent two hours sweeping because the shopkeep said it looked 'messy.'\n",
+                "\n\nHad to clean the storeroom again. Seems like that’s always a task.\n",
+                "\n\nThe shopkeep handed me a mop and said it was part of 'meditation.'\n",
+                "\n\nWhy is standing idle considered 'poor customer service' by the shopkeep?\n",
+                "\n\nI had to clean the path after a breeze. The shopkeep said it was important.\n",
+                "\n\nWhy does walking past a door cost me coins according to the shopkeep?\n",
+                "\n\nI had to clean broken pathways twice this week because of the shopkeep's requests.\n",
+                "\n\nWhy does staring at clouds or taking breaks a taxable activity by the shopkeep?\n",
+                "\n\nI patched the roof this morning because of wind and the shopkeep’s insistence.\n",
+                "\n\nWhy is repairing random supplies always so tedious and expensive with the shopkeep involved?\n",
+                "\n\nThe shopkeep expects me to spend all my time on pointless maintenance.\n",
+                "\n\nI cleaned out firewood this morning because the shopkeep said the path would stay better.\n",
+                "\n\nThe shopkeep scolded me for 'too much thinking' this morning.\n",
+                "\n\nThe shopkeep said that cleaning dust from the pathway would 'ensure good luck.'\n",
+                "\n\nSometimes, I wonder if cleaning all these random things is a form of punishment.\n",
+                "\n\nI fixed a broken lantern because the shopkeep said no one would come near otherwise.\n",
+                "\n\nWhy does the shopkeep always find new things that need 'light maintenance' around here?\n",
+                "\n\nToday, I cleaned the fire pit because the shopkeep said it had bad vibes.\n",
+                "\n\nEverything I do feels like it has a price attached with the shopkeep watching.\n",
+                "\n\nI spent three hours fixing a broken shelf because the shopkeep swore I was the only one who could.\n",
+                "\n\nWhy does the shopkeep think that polishing random stones has purpose?\n",
+                "\n\nI rearranged random boxes because the shopkeep thought it would look 'more appealing.'\n",
+                "\n\nSometimes I think the shopkeep just wants me to never stop doing something.\n",
+                "\n\nI swept the front steps because the shopkeep said it would 'improve morale.'\n",
+                "\n\nWhy is maintaining flowerbeds apparently a divine duty, according to the shopkeep?\n",
+                "\n\nI put away a stack of papers after the shopkeep decided they 'needed organizing.'\n",
+                "\n\nI had to fix the campfire because the shopkeep mentioned that 'morale was declining.'\n",
+                "\n\nWhy does the shopkeep always manage to tie every random task to luck somehow?\n",
+                "\n\nI cleaned out the water barrels because the shopkeep said 'clean water ensures prosperity.'\n",
+                "\n\nWhy is patching a random broken window considered a priority by the shopkeep?\n",
+                "\n\nThe shopkeep finds a way to make me do the most mundane things seem important.\n",
+                "\n\nI swept and cleaned up the toolshed just because the shopkeep wanted it done.\n",
+                "\n\nWhy does sweeping always end with the shopkeep finding more ways for me to sweep?\n",
+                "\n\nI fixed the paths again this morning because the shopkeep said 'footprints matter.'\n",
+                "\n\nToday felt like it was 50% cleaning and 50% cleaning requests from the shopkeep.\n",
+                "\n\nI straightened up random logs because apparently it’s a symbolic act of 'organization.'\n",
+                "\n\nThe shopkeep believes that taking a few minutes to do nothing is a bad idea.\n",
+                "\n\nI trimmed branches near the path because the shopkeep said they were 'off-putting.'\n",
+                "\n\nI had to haul extra firewood because apparently I needed to 'maintain seasonal readiness.'\n",
+                "\n\nWhy does the shopkeep equate cleaning to luck, fate, and preparation so often?\n",
+                "\n\nI patched a hole in the wall just because the shopkeep said it would 'prevent bad omens.'\n",
+                "\n\nSometimes I get the feeling that cleaning random things is just a way to pass time.\n",
+                "\n\nI made another round clearing dirt from random cracks because the shopkeep said it looked bad.\n",
+                "\n\nThe shopkeep had me spend time checking random pathways because 'weather damage can sneak up on you.'\n",
+                "\n\nWhy is fixing lanterns always the first thing when things get a bit stormy, according to the shopkeep?\n",
+                "\n\nI moved a few crates because apparently the shopkeep thought 'they'd look better there.'\n",
+                "\n\nSometimes I clean out random spots just because it feels like I’ll hear about it otherwise.\n",
+                "\n\nI dug out debris near the pathway because the shopkeep mentioned it could lead to 'bad weather.'\n",
+                "\n\nI replaced some wood panels because the shopkeep mentioned 'basic upkeep ensures survival.'\n",
+                "\n\nWhy does sweeping seem to turn into 'ritualistic upkeep' every time the shopkeep is involved?\n",
+                "\n\nI fixed broken fences again because it was part of another morning's request from the shopkeep.\n",
+                "\n\nWhy does every random broken thing in this area get labeled as urgent maintenance by the shopkeep?\n",
+                "\n\nI cleaned some pots this morning after the shopkeep said they would 'improve readiness.'\n",
+                "\n\nI made another round organizing things just because the shopkeep thought 'things should always align.'\n",
+                "\n\nWhy does clearing dust always involve needing some kind of justification from the shopkeep?\n",
+                "\n\nI spent the afternoon cleaning stone paths after yet another request from the shopkeep.\n",
+                "\n\nSometimes I think the shopkeep just wants me to always stay busy.\n",
+                "\n\nI spent another hour with firewood because of a random request from the shopkeep.\n",
+                "\n\nI repaired another broken shelf because it 'could affect future morale,' or so the shopkeep said.\n",
+                "\n\nWhy does it always come back to basic repairs with the shopkeep? Like fixing wood and stone.\n",
+                "\n\nI spent time clearing random supplies because the shopkeep prefers 'clean aisles.'\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n",
+                f"\n\nwelcome back!\nits a fine {current_day}, isnt it?\n"
 ]
+
+
 
 """actions"""
 
 def status():
     print(f"\ncoins: {player.money}\nhealth: {player.hp}\nstr: {player.strgth}\nspeed: {player.spd}\ndef: {player.deff}\nexp: {player.xp}\nlevel: {player.level}\nstat points: {player.statpnt}\n")
+
+def chat_guide():
+    phrase = random.randint(0,195)
+    print(guide_list_1[phrase])
 
 def check_self():
     if player.hp <= 100 and player.hp >= 75:
@@ -499,7 +740,7 @@ def locations_update(): #we dont use var = set(player.locations) cause the origi
 
 """item create"""
 screen_clear = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-fland = MakeWorld("freeland", -100, 100, -100, 100, 0, 0, 0, 200)
+fland = MakeWorld("freeland", -100, 100, -100, 100, 0, 0, 0, 1000)#debug
 hp_pot = Item("H-pot", 25, 20, effect=hp_effect)
 main()
 game() 
