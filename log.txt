@@ -26,3 +26,5 @@ bug in hostile gen, hostile.json is empty meaning the list has no data
 faliure in hostile_gen.json as well
 
 NOTES FOR 0.1.1:
+fixed bad syntax in hostile check
+you can now encounter enemies
