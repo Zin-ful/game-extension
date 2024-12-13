@@ -110,9 +110,9 @@ class MakeHostile():
     hostile = True
     def __init__(self, min_sizex, max_sizex, min_sizey, max_sizey, event_count, name, lvl, hp, atk, spd, deff):
         self.min_sizex = min_sizex
-        self.max_sizex = min_sizex
-        self.min_sizey = min_sizex
-        self.max_sizey = min_sizex
+        self.max_sizex = max_sizex
+        self.min_sizey = min_sizey
+        self.max_sizey = max_sizey
         self.event_count = event_count
         self.name = name
         self.lvl = lvl
@@ -123,6 +123,7 @@ class MakeHostile():
         self.h_coord_listx =[]
         self.h_coord_listy =[]
         self.hostile_spawn =[]
+        self.encounter = False
 
 
     def attack_player():
@@ -131,6 +132,7 @@ class MakeHostile():
     
     def generate_hostilemap(self):
         global counter
+        counter = 0
         self.h_coord_listx =[]
         self.h_coord_listy =[]
         while counter < self.event_count: #create general max to increase variety
@@ -207,7 +209,7 @@ class MakeWorld():
         self.t_coord_listy = []
         self.tree_spwn = []
     def left(self, player):
-        global effort, result
+        global effort, result, hostiles
         if player.x >= self.min_sizex:
             player.x -= 1   
         elif player.x <= self.min_sizex: #replace static max size with makeworld max size
@@ -221,12 +223,12 @@ class MakeWorld():
             player.x += 1
         for hostile in hostiles:
             hostile_check(player, hostile)
+
                     
   
 
     def right(self, player):
-        global result, effort
-        MakeHostile.hostile_check()
+        global result, effort, hostiles
         if player.x <= self.max_sizex:
             player.x += 1
         elif player.x >= self.max_sizex: 
@@ -238,11 +240,11 @@ class MakeWorld():
         if (player.x, player.y) in self.tree_spwn:
             result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
             player.x -= 1
-            for hostile in hostiles:
-                hostile_check(player, hostile)
+        for hostile in hostiles:
+            hostile_check(player, hostile)
             
     def up(self, player):
-        global result, effort
+        global result, effort, hostiles
         if player.y <= self.max_sizey:
             player.y += 1
         elif player.y >= self.max_sizey:
@@ -254,11 +256,11 @@ class MakeWorld():
         if (player.x, player.y) in self.tree_spwn:
             result = f"\ndamn tree in my way at y: {player.x}, {player.y}"
             player.y -= 1
-            for hostile in hostiles:
-                hostile_check(player, hostile)
+        for hostile in hostiles:
+            hostile_check(player, hostile)
         
     def down(self, player):
-        global result, effort
+        global result, effort, hostiles
         if player.y >= self.min_sizey:
             player.y -= 1
         elif player.y <= self.min_sizey:
@@ -275,6 +277,7 @@ class MakeWorld():
         
     def generate_treemap(self):
         global counter
+        counter = 0
         self.t_coord_listx =[]
         self.t_coord_listy =[]
         while counter < self.event_count: #create general max to increase variety
@@ -390,7 +393,8 @@ def intro():
         "sleep": rest,
         "view bag": view_bag,
         "exit":sys.exit,
-        "help":lambda:print(f"your actions are:\nexplore, status, sleep\nmirror, level, points\nsave, players, calendar\nexit")
+        "help":lambda:print(f"your actions are:\nexplore, status, sleep\nmirror, level, points\nsave, players, calendar\nchat, view_bag, shop\nplayers, exit"),
+        "cheat":cheat
     }
     if player.intro == 0:
         player.locations = []
@@ -428,13 +432,16 @@ def store():
 
 def freeland():
     print("generating world")
+    time.sleep(1)
     fland.generate_treemap()
     fland.generate_tree()
     print("generating enemies")
+    time.sleep(1)
     fland_hostile_rouge.generate_hostilemap()
     fland_hostile_rouge.generate_hostile()
-    fland_hostile_scavanger.generate_hostilemap()
-    fland_hostile_scavanger.generate_hostile()
+    time.sleep(1)
+    #fland_hostile_scavanger.generate_hostilemap()
+    #fland_hostile_scavanger.generate_hostile()
     player.day += 1
     arg = ''
     freeland_actions = {
@@ -472,42 +479,47 @@ def darkwood():
 
     player.intro = 3   
 
-def battle(player, hostiles): 
-    cache_lvl = hostiles.lvl
-    cache_hp = hostiles.hp
-    cache_deff = hostiles.deff
+def battle(player, hostile): 
+    cache_lvl = hostile.lvl
+    cache_hp = hostile.hp
+    cache_deff = hostile.deff / 4
+    cache_deff = round(cache_deff)
     recent_atkhos = False
     recent_atkplr = False
+    cache_plr_str = player.strgth
+    if not cache_deff <= 0:   
+        cache_plr_str = player.strgth / cache_deff
+    
     while True:
-        cache_atk = hostile.atk + random.randint(0,mon_lvl)
-        cache_spd = hostile.spd + random.randint(0,mon_lvl)
-        print(f"\n\n{player.name}:\n{player.hp}\n{player.strgth}\n{player.spd}\n{player.deff}\n")
+        cache_atk = hostile.atk + random.randint(0,cache_lvl)
+        cache_spd = hostile.spd + random.randint(0,cache_lvl)
+        print(f"\n\n{player.name}:\nHealth: {player.hp}\nStrength: {player.strgth}\nSpeed: {player.spd}\nDefense: {player.deff}\n")
         print("\nattack? defend? or run?n")
         plr_input = input("\n>>>")
         if "a" in plr_input.lower() or "1" in plr_input:
-            if player.spd > cache_monspd:
+            if player.spd > cache_spd:
                 if recent_atkplr == False:
                     recent_atkplr = True
-                    cache_monhp -= plr_atk
-                    print(f"{player.name} attacked for {player.strgth} damage.\n{hostile.name} has {cache_hp} left.")
+                    cache_hp -= cache_plr_str
+                    print(f"{player.name} attacked for {cache_plr_str} damage.\n{hostiles.name} has {cache_hp} left.")
                 else:
                     recent_atkplr = False
-                    plr_hp -= cache_monatk
+                    player.hp -= cache_atk
                     print(f"{player.name} got attacked for {cache_atk} damage.\n{player.name} has {player.hp} left.")
-            elif player.spd <= cache_monspd:
-                if recent_atkmon == False:
-                    recent_atkmon = True
-                    plr_hp -= cache_monatk
+            elif player.spd <= cache_spd:
+                if recent_atkhos == False:
+                    recent_atkhos = True
+                    player.hp -= cache_atk
                     print(f"{player.name} got attacked for {cache_atk} damage.\n{player.name} has {player.hp} left.")
                 else:
-                    recent_atkmon = False
-                    cache_monhp -= plr_atk
-                    print(f"{player.name} attacked for {player.strgth} damage.\n{hostile.name} has {cache_hp} left.")
+                    recent_atkhos = False
+                    cache_hp -= cache_plr_str
+                    print(f"{player.name} attacked for {cache_plr_str} damage.\n{hostile.name} has {cache_hp} left.")
         if player.hp <= 0:
-            print(f"{plr_nm} suffered a horrible death at the hands of\nball crusher™ and got his balls crushed")
-            break 
-        elif cache_monhp <= 0:
-            print(f"{plr_nm} vanquished the angel dooming this world")
+            print(f"{player.name} suffered a horrible death at the hands of\n{hostile.name} and got his balls crushed")
+            sys.exit()
+        elif cache_hp <= 0:
+            print(f"{player.name} vanquished the {hostile.name} dooming this world")
             break
 
 """npc phrase"""
@@ -807,13 +819,19 @@ def view_bag():
         else:
             index += 1
 
+def cheat():
+    player.strgth += 25
+
 """utility"""
 
-def hostile_check(player, hostiles):
+def hostile_check(player, hostile):
     if (player.x, player.y) in hostile.hostile_spwn:
-        battle()
-        if player.hp == 0:
-            print("you lossed")
+        hostile.encounter = True
+        battle(player, hostile)
+        if hostile.encounter == True:
+            print({player.x, player.y})
+            hostile.hostile_spwn.remove({player.x, player.y})
+            hostile.encounter = False
 
 def weekdays():
     global current_day
@@ -838,9 +856,9 @@ def locations_update(): #we dont use var = set(player.locations) cause the origi
 screen_clear = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 fland = MakeWorld("freeland", -100, 100, -100, 100, 0, 0, 0, 1000)#debug
 hp_pot = Item("H-pot", 25, 20, effect=hp_effect)
-fland_hostile_rouge = MakeHostile(-100, 100, -100, 100, 1000, "rouge", 1, 100, 10, 5, 0)
-fland_hostile_scavanger = MakeHostile(-100, 100, -100, 100, 1000, "scavanger", 1, 100, 10, 5, 0)
-hostiles = [fland_hostile_rouge, fland_hostile_scavanger]
+fland_hostile_rouge = MakeHostile(-100, 100, -100, 100, 1000, "rouge", random.randint(0,5), 100, 1, 5, 0)
+#fland_hostile_scavanger = MakeHostile(-100, 100, -100, 100, 1000, "scavanger", 1, 100, 10, 5, 0)
+hostiles = [fland_hostile_rouge]#fland_hostile_scavanger]
 main()
 game() 
 
